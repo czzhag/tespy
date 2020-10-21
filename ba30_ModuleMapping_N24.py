@@ -22,23 +22,23 @@ dc2mcecol = [[[0 for i in range(w)] for j in range(h)] for k in range(12)]
 dc2mcerow = [[[0 for i in range(w)] for j in range(h)] for k in range(12)]
 
 for k in range(12):
-	dc2mcecol[k][0] = [k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1]
-	dc2mcecol[k][1] = [k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1]
-	dc2mcecol[k][2] = [k*2+1,k*2+1,k*2+1,k*2+1,   -1,   -1,   -1,   -1,   -1,   -1]
+	dc2mcecol[k][0] = [k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2]
+	dc2mcecol[k][1] = [k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2,k*2]
+	dc2mcecol[k][2] = [k*2,k*2,k*2,k*2,k*2,   -1,   -1,   -1,   -1,   -1,   -1]
 	dc2mcecol[k][3] = [   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1]
-	dc2mcecol[k][4] = [k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,k*2+1,  k*2,  k*2,  k*2,  k*2]
-	dc2mcecol[k][5] = [  k*2,  k*2,  k*2,  k*2,   -1,   -1,   -1,   -1,   -1,   -1]
-	dc2mcecol[k][6] = [  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2]
-	dc2mcecol[k][7] = [  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2,  k*2]
+	dc2mcecol[k][4] = [k*2,k*2,k*2,k*2,k*2,k*2,  k*2+1,  k*2+1,  k*2+1,  k*2+1]
+	dc2mcecol[k][5] = [  k*2+1,  k*2+1,  k*2+1,  k*2+1,   -1,   -1,   -1,   -1,   -1,   -1]
+	dc2mcecol[k][6] = [  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1]
+	dc2mcecol[k][7] = [  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1,  k*2+1]
 	
-	dc2mcerow[k][0] = [32,31,30,29,28,27,26,25,24,23]
-	dc2mcerow[k][1] = [21,20,19,18,17,16,15,14,13,12]
-	dc2mcerow[k][2] = [10,9, 8, 7,-1,-1,-1,-1,-1,-1]
+	dc2mcerow[k][0] = [ 0,32,31,30,29,28,27,26,25,24]
+	dc2mcerow[k][1] = [22,21,20,19,18,17,16,15,14,13]
+	dc2mcerow[k][2] = [11,10,9, 8, -1,-1,-1,-1,-1,-1]
 	dc2mcerow[k][3] = [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
-	dc2mcerow[k][4] = [ 6, 5, 4, 3, 2, 1, 3, 4, 5, 6]
-	dc2mcerow[k][5] = [ 7, 8, 9,10,-1,-1,-1,-1,-1,-1]
-	dc2mcerow[k][6] = [12,13,14,15,16,17,18,19,20,21]
-	dc2mcerow[k][7] = [23,24,25,26,27,28,29,30,31,32]
+	dc2mcerow[k][4] = [ 7, 6, 5, 4, 3, 2, 4, 5, 6, 7]
+	dc2mcerow[k][5] = [ 8, 9,10,11,-1,-1,-1,-1,-1,-1]
+	dc2mcerow[k][6] = [13,14,15,16,17,18,19,20,21,22]
+	dc2mcerow[k][7] = [24,25,26,27,28,29,30,31,32, 0]
 
 #dc2mcecol = np.array(dc2mcecol)
 #dc2mcerow = np.array(dc2mcerow)
@@ -69,15 +69,15 @@ det2dccol[1][1] = [ 2, 2, 2, 2]
 det2dccol[1][2] = [ 7, 7, 7, 7]
 det2dccol[1][3] = [ 8, 8, 8, 8]
 
-det2dcpad[0][0] = [ 4, 6, 2, 8]
-det2dcpad[0][1] = [ 4, 6, 2, 8]
-det2dcpad[0][2] = [ 4, 6, 2, 8]
-det2dcpad[0][3] = [ 4, 6, 2, 8]
+det2dcpad[0][0] = [ 6, 8, 4, 10]
+det2dcpad[0][1] = [ 6, 8, 4, 10]
+det2dcpad[0][2] = [ 6, 8, 4, 10]
+det2dcpad[0][3] = [ 6, 8, 4, 10]
 
-det2dcpad[1][0] = [ 3, 5, 1, 7]
-det2dcpad[1][1] = [ 3, 5, 1, 7]
-det2dcpad[1][2] = [ 3, 5, 1, 7]
-det2dcpad[1][3] = [ 3, 5, 1, 7]
+det2dcpad[1][0] = [ 5, 7, 3, 9]
+det2dcpad[1][1] = [ 5, 7, 3, 9]
+det2dcpad[1][2] = [ 5, 7, 3, 9]
+det2dcpad[1][3] = [ 5, 7, 3, 9]
 
 dc2detpol = [[-1 for i in range(w)] for j in range(h)]
 dc2detcol = [[-1 for i in range(w)] for j in range(h)]
@@ -91,14 +91,14 @@ for pp in range(2):
 			dc2detpol[det2dccol[pp][cc][rr]-1][det2dcpad[pp][cc][rr]-1] = pp
 			dc2detcol[det2dccol[pp][cc][rr]-1][det2dcpad[pp][cc][rr]-1] = cc+1
 			dc2detrow[det2dccol[pp][cc][rr]-1][det2dcpad[pp][cc][rr]-1] = rr+1
-dc2detpol[4][0] = 99
-dc2detpol[4][1] = 99
 dc2detpol[4][2] = 99
 dc2detpol[4][3] = 99
 dc2detpol[4][4] = 99
 dc2detpol[4][5] = 99
 dc2detpol[4][6] = 99
 dc2detpol[4][7] = 99
+dc2detpol[4][8] = 99
+dc2detpol[4][9] = 99
 
 def dc2mce(iM,dccol,dcpad):
 	mcecol = dc2mcecol[iM][dccol-1][dcpad-1]

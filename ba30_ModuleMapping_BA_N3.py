@@ -112,17 +112,17 @@ def mce2dc(mcecol,mcerow):
 	return iM,dccol,dcpad
 
 def dc2det(dccol,dcpad):
-    detcol = dc2detcol[dccol-1][dcpad-1]
-    detrow = dc2detrow[dccol-1][dcpad-1]
-    if dc2detpol[dccol-1][dcpad-1]==1:
-        detpol = 'B'
-    elif dc2detpol[dccol-1][dcpad-1]==0:
-        detpol = 'A'
-    elif dc2detpol[dccol-1][dcpad-1]==99:
-        detpol = 'D'
-    else:
-        detpol = 'nan'
-    return detcol,detrow,detpol
+	detcol = dc2detcol[dccol-1][dcpad-1]
+	detrow = dc2detrow[dccol-1][dcpad-1]
+	if dc2detpol[dccol-1][dcpad-1]==1:
+		detpol = 'B'
+	elif dc2detpol[dccol-1][dcpad-1]==0:
+		detpol = 'A'
+	elif dc2detpol[dccol-1][dcpad-1]==99:
+		detpol = 'D'
+	else:
+		detpol = 'nan'
+	return detcol,detrow,detpol
 
 def det2dc(detcol,detrow,detpol):
 	if detpol == 'A':

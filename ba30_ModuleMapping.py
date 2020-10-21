@@ -116,11 +116,12 @@ def dc2det(dccol,dcpad):
 	detrow = dc2detrow[dccol-1][dcpad-1]
 	if dc2detpol[dccol-1][dcpad-1]==1:
 		detpol = 'B'
-        
+	elif dc2detpol[dccol-1][dcpad-1]==0:
+		detpol = 'A'
 	elif dc2detpol[dccol-1][dcpad-1]==99:
 		detpol = 'D'
 	else:
-		detpol = 'A'
+		detpol = 'nan'
 	return detcol,detrow,detpol
 
 def det2dc(detcol,detrow,detpol):
