@@ -1,0 +1,16 @@
+Instuction on fts analysis.
+
+(1) Raw timestream data goes to /home/data/cryo/<DATE>/
+(2) Use fts_quicklook.ipynb to see which detectors have usable 
+    interferograms in each data file.
+(3) Prepare filelist, fns.
+(4) Prepare channel list for each data file, chns.
+(5) Prepare filelist wlf. Use 
+	python fts_grid_quicklook_v2.py yyyymmdd mcefilename mcecol mcerow
+    Check if the red points in the output plots are really white light fringes. If not, you need to zoomin and find the roughly correct white light fringe.
+    Copy (with necessary modifications) the wlf array to the filelist wlf.
+(6) run fts_spec_v2.py
+    Change 'from <filename> import flist' line to the correct filelist name
+    Change 'import <mapping filename> as minfo' line to the correct mapping script.
+    Change the vars at the beginning of the script accordingly. 
+    
