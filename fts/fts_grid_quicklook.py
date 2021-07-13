@@ -13,9 +13,9 @@ import cPickle as pickle
 import math
 import mce_data
 import peakdetect
-filelistpath = "/home/cheng/analysis/tespy/fts/filelist"
+filelistpath = "./filelist"
 sys.path.insert(0, filelistpath)
-from ba30_SK_N1 import flist
+from ba30_SK_N5_A_highsq1 import flist
 
 class opts:
 	if len(sys.argv)<2:
@@ -38,13 +38,14 @@ def get_time_stream(row, col, S, filename, out_path_main):
 		os.makedirs(out_path)
 	
 	pl.figure(figsize=(10,10), dpi=80)
-	y = signal.detrend(S[row,col])
+	#y = signal.detrend(S[row,col])
+	y = S[row,col]
 	pl.plot(y)
 	[maxp,minp] = peakdetect.peakdetect(y_axis=y, lookahead=5000)
 	minx,miny = zip(*minp)
 	minx,miny = real_wlf(minx,miny,lsurr=15000)
 	pl.scatter(minx,miny,color='r')
-	plt.ylim(-200,200)
+	#plt.ylim(-200,200)
 	fn = os.path.join(out_path, 'row'+str(int(row))+'col'+str(int(col))+'.png')
 	print("'r%dc%d':{'"%(row,col)+filename+"':%s}"%str(minx))
 	plt.show()

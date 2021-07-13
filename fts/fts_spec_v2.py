@@ -15,7 +15,7 @@ import cPickle as pickle
 import ba30_ModuleMapping_N3 as minfo
 import sys,os
 sys.path.insert(0, "./filelist")
-from ba30_SK_N7N6_v2 import flist
+from ba150_SK_E14_v2 import flist
 
 testbed = 'SK'
 
@@ -24,16 +24,16 @@ v_mirror = 2.0e-3 #mm/s for the harvard fts, v_mirror = 1.905e-3 #mm/s
 nSample = 210.44 #Mux-11, row_len-120, datarate-60, row_num-33
 delta_step = 2*v_mirror/nSample
 fNyq = c/2/delta_step/1e9 #in GHz
-nlen_hlf_intf = 13000 # number of points to use on each side of the wlf
-highp = 50 # set the x limit of the spectrum plot
-lowp = 0 
+nlen_hlf_intf = 10000 # number of points to use on each side of the wlf
+highp = 280 # GHz, set the x limit of the spectrum plot
+lowp = 140 
 kB = 1.38e-11 # match pW
 small = False # make small plots
-savefigdetcoord=1  
-date  = '20210511'
-runn = 'SK_N7B6'
-cols = [8,9,0,1] # mce cols to run through. mce row is default as 0-32
-doEff = 1 # if you want to scale the y axis of the spectrum to optical efficiency
+savefigdetcoord=0  
+date  = '20210707'
+runn = 'SK_E14_150GHz'
+cols = range(16) # mce cols to run through. mce row is default as 0-32
+doEff = 0 # if you want to scale the y axis of the spectrum to optical efficiency
 indpdt = '/home/cheng/analysis/DATA/output/20210423/20210423_SK_BA30N6N7/20210423_SK_BA30N6N7_dpdt_rnti.pkl' # specify the dpdt data file to use if you set doEff=1
 
 def mask_spikes(fb, nfb, hwin=15):
@@ -244,7 +244,7 @@ def main():
 					x0=np.linspace(0,len(fb_hs),len(fb_hs))
 					polyb = np.poly1d(np.polyfit(x0, fb_hs, 3))
 					fb_hs = fb_hs - polyb(x0)
-					wlf_better = int(round(adjust_wlf(fb_hs,55)))+wlf_prim
+					wlf_better = int(round(adjust_wlf(fb_hs,300)))+wlf_prim
 					fb_hs = fb[wlf_better-nlen_hlf_intf:wlf_better+nlen_hlf_intf+1]
 					if len(fb_hs)<len(x):
 						continue

@@ -45,7 +45,8 @@ def get_time_stream(row, col, S, filename, out_path_main):
 	#y = signal.detrend(S[row,col])
 	y = S[row,col]
 	pl.plot(y)
-	[maxp,minp] = peakdetect.peakdetect(y_axis=y, lookahead=5000)
+	#[maxp,minp] = peakdetect.peakdetect(y_axis=y, lookahead=5000)
+	[minp,maxp] = peakdetect.peakdetect(y_axis=y, lookahead=5000)
 	minx,miny = zip(*minp)
 	minx,miny = real_wlf(minx,miny,lsurr=15000)
 	pl.scatter(minx,miny,color='r')

@@ -7,14 +7,17 @@ import sys, os
 import os.path
 import pylab as pl
 import mce_data
+sys.path.insert(0, "../")
 import calib_SK
 import calib_BA1
 import cPickle as pickle
 #import ba40_ModuleMapping_BA as ba40_ModuleMapping
 import ba30_ModuleMapping as minfo
 import sys,os
-sys.path.insert(0, "/home/cheng/analysis/fts/filelist")
-from ba30_SK_N1 import flist
+sys.path.insert(0, "./filelist")
+from ba30_SK_N5_B_highsq1 import flist
+#from ba30_SK_N1 import flist
+#from ba40_T3 import flist
 #import despike
 
 # not really need to match the testbed you used to take data, but can be used to specify the 
@@ -29,11 +32,21 @@ delta_step = 2*v_mirror/nSample
 fNyq = c/2/delta_step/1e9 #in GHz
 nlen_hlf_intf = 13000
 nlen_fb = nlen_hlf_intf+1000
-highp = 45
+highp = 1000
 lowp = 20
 kB = 1.38e-11 # match pW
-small = False 
-
+small = True 
+doEff = 0
+date  = 20201020
+#date = 20201022
+#date = 20191106
+#date = 20181210
+runn = 'SK_N5_B_highsq1'
+#runn = 'SK_N5_B_lowsq1'
+#runn = 'SK_N1'
+#runn = 'SK_T3'
+cols = [0,1]
+indpdt = '/home/cheng/analysis/DATA/output/20191106/BA30N1-SK/BA30N1-SK_dpdt_rnti.pkl'
 
 def mask_spikes(fb, nfb, hwin=15):
 	mask = np.full(len(fb), 1)
@@ -165,12 +178,12 @@ def main():
 	#===================================================================
 	# input data
 	#===================================================================
-	in_path  = '/home/cheng/analysis/DATA/cryo/20191106/'
+	in_path  = '/home/cheng/analysis/DATA/cryo/%s/'%date
 	if testbed == 'BA':
 		filelist,wlf = dataNwlfBA()
 	else:
 		filelist,wlf = dataNwlf()
-	out_path_main = '/home/cheng/analysis/DATA/output/20191106/'
+	out_path_main = '/home/cheng/analysis/DATA/output/%s/'%date
 	if small:
 		out_fig = out_path_main+'spec/'
 		if not os.path.isdir(out_fig):
@@ -189,22 +202,20 @@ def main():
 	spcos = {}
 	spsin = {}
 
-	for col in [8, 9]:
+	for col in cols:
 		for row in range(33):
 			if not ('r'+str(row)+'c'+str(col) in filelist):
 				continue
 			if not (testbed == 'BA'):
 				if not ('r'+str(row)+'c'+str(col) in wlf):
 					continue
-			doEff = 1
-			if col in [8, 9]:
-				indpdt = '/home/cheng/analysis/DATA/output/20191106/BA30N1-SK/BA30N1-SK_dpdt_rnti.pkl'
+			
 			if os.path.exists(indpdt):
 				d2 = pickle.load(open(indpdt,'r'))
 				dpdt = d2[0][col][row]
 			else:
 				print('NO DPDT data!')
-				doEff = 0
+				exit
 		
 			#===================================================================
 			# get the interferogram
@@ -298,7 +309,7 @@ def main():
 				avereff = 0	
 			# plot
 			ax = pl.subplot(2,1,2)
-			plt.plot(freq,cs,'r',freq,-ss,'g')
+			plt.plot(freq,-cs,'r',freq,ss,'g')
 			plt.xlim(lowp,highp)
 			plt.xlabel('freq GHz',fontsize=25)
 			if doEff:
@@ -323,7 +334,7 @@ def main():
 			spcos['r%dc%d'%(row,col)] = cs
 			spsin['r%dc%d'%(row,col)] = ss		
 
-	fnpickle = out_path_main + 'SK_N1_fts.pkl'
+	fnpickle = out_path_main + '%s_fts.pkl'%runn
 	pickle.dump((bw_array, bc_array, eff_array, detcol_array, detrow_array, detpol_array, interfg, spcos, spsin, v_mirror, nSample),open(fnpickle,'w'))
 	
 	
