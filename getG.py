@@ -21,15 +21,15 @@ from Gtemplists import gettemplists
 # INPUTs			     #
 # ================================== #
 class opts:
-	testbed = 'BA'
-	freq = 40 # GHz
-	date = '20190908'
-	module = 'BA40M4T4'
+	testbed = 'SK'
+	freq = 30 # GHz
+	date = '20201205'
+	module = 'BA30N5S5'
 	runn = '%s_%s_%s'%(date,testbed,module)
 	rnpsat = 0.07 # Ohm
 	iffitbeta = True 
-	fitrange = {	'rnti_low': 700.00,
-			'rnti_hgh': 900.00,
+	fitrange = {	'rnti_low': 3000.00,
+			'rnti_hgh': 5000.00,
 			'sc_low': 0.00,
 			'sc_hgh': 30.00}	
 	#cols = range(12)
@@ -81,9 +81,9 @@ def main():
 	prdata = {}
 	colors = pl.cm.jet(np.linspace(0,1,len(templist)))
 	
-	in_path  = './cryo/%s/'%(opts.date)
+	in_path  = '../cryo/%s/'%(opts.date)
 	print('input folder: %s'%in_path)
-	out_path_main = './output/%s/'%(opts.date)
+	out_path_main = '../output/%s/'%(opts.date)
 	print('output folder: %s'%out_path_main)
 	
 	for temp in templist:
@@ -122,8 +122,9 @@ def main():
 				fitrange = opts.fitrange
 				# get_LC(bias, fb, calib, fitrange = None, row = None, col = None, out_path = None, flip = 1, DCflag='RN')
 				ibias, ites, rnti, ksc = lc(bias, y[row,col], calib, fitrange, row, col)
+				print(ksc)
 				# get_PR_Ti(biascalib, fbcalib, calib, rnti, rnpsat, ksc = None, row = None, col = None, out_path = None, flip = 1)
-				rr, pp, psat = pr(ibias, ites, calib, rnti, opts.rnpsat, row=row, col=col)
+				rr, pp, psat = pr(ibias, ites, calib, rnti, opts.rnpsat, ksc=ksc, row=row, col=col)
 				lcdata[str(temp)+'_r'+str(row)+'c'+str(col)] = [ibias, ites]
 				prdata[str(temp)+'_r'+str(row)+'c'+str(col)] = [rr, pp, rnti, psat, 1/(ites*rr)] 	
 	

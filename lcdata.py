@@ -33,7 +33,7 @@ def fixfluxramp(ites):
 		ites[ijump+1:] += -di[ijump] + di[ijump-1]
 	return ites
 
-# input raw bias/fb in ADU, only for 1 det
+# input calibrated bias/fb in A, only for 1 det
 # output biascalib, fbcalib with shift, rnti
 def get_LC_calibed(bias, fb, calib, fitrange = None, row = None, col = None, out_path = None, flip = 1, DCflag='RN'):
 
@@ -96,6 +96,177 @@ def get_LC_calibed(bias, fb, calib, fitrange = None, row = None, col = None, out
         
 	return biascalib, fbcalib, RR, ceff_sc[0]
 
+
+# input path to plc folder
+def get_PLC(lcfn, fitrange = None, calib = None, flip = 1):
+	
+	# load data
+	fn = lcfn.split('/')[-1]		
+	f  = mce_data.MCEFile('%s/%s'%(lcfn,fn))
+	y  = flip*f.Read(row_col=True,unfilter='DC').data  	
+	nr,nc,nt = y.shape
+
+	bias  = np.full((nc,nt),np.nan) 
+	fbias = open('%s/bias_script.scr'%lcfn)
+	il = 0
+	for line in fbias:
+		if 'tes bias' in line:
+			bs = line.split()
+			bs = bs[3:]
+			for i,x in enumerate(bs):
+				 bias[i,il] = int(x)
+			il += 1
+
+	for ic in range(nc):
+		nanind = np.where(bias[ic,:]==bias[ic,-1])[0]
+		if len(nanind) < nt:
+			nanind = nanind[1:]
+		bias[ic,nanind] = np.nan
+		y[:,ic,nanind]  = np.nan
+
+	# get fitrange
+	if fitrange is None:
+		fitrange = get_default_fitrange()
+	
+        # fit
+	idet= np.full_like(y, np.nan)
+	ibias= np.full_like(y, np.nan)
+	rdet= np.full_like(y, np.nan)
+	pdet= np.full_like(y, np.nan)
+	vdet= np.full_like(y, np.nan)
+	kRn = np.full((nr,nc), np.nan)
+	Rn  = np.full((nr,nc), np.nan)
+	Rop = np.full((nr,nc), np.nan)	
+
+	for ic in range(nc):
+
+		b = bias[ic,:]
+		if all(np.isnan(b)):
+			continue
+		
+		for ir in range(nr):
+
+			fb = y[ir,ic,:]
+			if all(np.isnan(fb)):
+				continue
+			if all(fb[np.where(~np.isnan(b))[0]]==0):
+				continue			
+
+			# fit rnti slope
+        		b_fit = np.array([b[i] for i in xrange((len(b))) 
+				if (b[i]>fitrange["rnti_low"] and b[i]<fitrange["rnti_hgh"])])
+        		fb_fit   = np.array([fb[i] for i in xrange((len(fb))) 
+				if (b[i]>fitrange["rnti_low"] and b[i]<fitrange["rnti_hgh"])])
+
+        		# fit with poly1
+        		ceff  = np.polyfit(b_fit,fb_fit,1)
+			kRn[ir,ic] = ceff[0]
+        		ffunc = np.poly1d(ceff)
+
+			# fix DC offset
+			shift_h  = ffunc(0)
+			fb = fb - shift_h
+			y[ir,ic,:] = fb 
+
+        		# normal resistance
+			if calib is not None:
+	
+				idet[ir,ic,:] = -fb*calib["FB_CAL"][0]
+				ibias[ir,ic,:]= b*calib["BIAS_CAL"][0]
+				rdet[ir,ic,:] = (ibias[ir,ic,:]/idet[ir,ic,:] - 1)*calib["R_SH"] 
+				pdet[ir,ic,:] = idet[ir,ic,:]*idet[ir,ic,:]*rdet[ir,ic,:]
+				vdet[ir,ic,:] = rdet[ir,ic,:]*idet[ir,ic,:]
+
+        			Rn[ir,ic] = calib["R_SH"]*(1.00/(-kRn[ir,ic]*calib["FB_CAL"][0]/calib["BIAS_CAL"][0])-1.00) #Ohms
+        			if Rn[ir,ic]<10e-3 or Rn[ir,ic]>1000e-3:
+                			Rn[ir,ic] = np.nan
+					kRn[ir,ic]= np.nan
+					continue
+				Rop[ir,ic]= rdet[ir,ic,np.where(~np.isnan(rdet[ir,ic,:]))[0][-1]]
+
+	class plc:
+		filename = lcfn
+		Y = y
+		B = bias
+		K = kRn
+		Idet = idet
+		Ibias= ibias
+		Rdet = rdet
+		Pdet = pdet
+		Vdet = vdet
+		R = Rn
+		R0   = Rop
+        
+	return plc
+
+# get loop gain from PR
+# L = Pe/R x (dR/dPe)
+def get_loopgain(pp,rr,win=50):
+
+	nr,nc,nx = np.shape(pp)	
+	Lpg = np.full_like(pp,np.nan)
+	
+	def devm(x,y,win=50):
+		dydx = np.full_like(x, np.nan)
+		ii = 0
+		while True:
+			if ii-win < 0:
+				ii += 1
+				continue
+			if ii+win+1 >= len(x):
+				break
+			x1_ = x[ii-win:ii]
+			x1_ = np.concatenate((np.reshape(x1_,(win,1)), np.ones((win,1))), 1)
+			x2_ = x[ii+1:ii+win+1]
+			x2_ = np.concatenate((np.reshape(x2_,(win,1)), np.ones((win,1))), 1)
+			y1_ = np.reshape(y[ii-win:ii],(win,1))
+			y2_ = np.reshape(y[ii+1:ii+win+1],(win,1))
+
+			k1,r1,_,_ = np.linalg.lstsq(x1_,y1_)			
+			k2,r2,_,_ = np.linalg.lstsq(x2_,y2_)			
+
+			dydx[ii] = (abs(k1[0])+abs(k2[0]))/2
+			ii += 1
+		
+		return dydx 
+
+	def dev(x,y,win=100):
+		if len(x) != len(y) :
+			print "Need same length for x,y to do derivation."
+			return None
+		if len(x) < win :
+			print "Need more than %d points to do derivation."
+			return None
+		dydx = np.full_like(x, np.nan)
+		Mdydx= np.full((win,len(x)), np.nan)
+
+		ii = 0
+		while True:
+			if ii+win >= len(x):
+				break
+			x_ = x[ii:ii+win]
+			x_ = np.concatenate((np.reshape(x_,(win,1)), np.ones((win,1))), 1) 
+			
+			y_ = np.reshape(y[ii:ii+win],(win,1))
+			k,r,_,_ = np.linalg.lstsq(x_,y_)
+			dydx[ii] = k[0]
+			ii += 1
+		if np.mod(win,2): 
+			dydx = np.roll(dydx, int((win-1)/2.))
+		else:
+			dydx = np.roll(dydx, int((win)/2.))
+
+		return dydx
+	
+	for ir in range(nr):
+		for ic in range(nc):
+			p = pp[ir,ic,:]
+			r = rr[ir,ic,:]
+			if all(np.isnan(r)) or all(np.isnan(p)):
+                                continue
+			dpdr = dev(r,p,win)
+			Lpg[ir,ic,:] = p/r/dpdr 
+	return Lpg
 
 
 # input raw bias/fb in ADU, only for 1 det

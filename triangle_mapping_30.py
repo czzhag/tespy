@@ -7,8 +7,8 @@ import scipy.io as sio
 import numpy as np
 import math
 import sys,os
-import ba30_ModuleMapping_BA as bamap
-import ba30_ModuleMapping as skmap
+import ba30_ModuleMapping_BA_N3 as bamap
+import ba30_ModuleMapping_N3 as skmap
 
 Ndet_mce = 2*33
 Ndet_det = 2*33
@@ -48,17 +48,20 @@ def prepare_triangles(lld):
 	triangles = np.asarray(triangles)
 	return x,y,triangles
 
-def prepare_data(input_inmce, itile=0, mapping='BA'):
+def prepare_data(input_inmce, mask, itile=0, mapping='BA'):
 
 	data_arr = [float('nan') for x in range(w)]
+	mask_arr = [0 for x in range(w)]
 	#da = [0]*h
 	DATA = []
 	IDet_col = []
 	IDet_row = []
 	POLAR = []
+	MASK = []
 	for icol in [0,1]:
 		for irow in range(33):
 			DATA.append(input_inmce[icol][irow])
+			MASK.append(mask[icol][irow])
 			if mapping=="BA":
 				[im, dc,dr,dp] = bamap.mce2det(2*itile+icol,irow)
 			else:
@@ -74,6 +77,7 @@ def prepare_data(input_inmce, itile=0, mapping='BA'):
                         idet_col = int(IDet_col[idet])
                         idet_row = int(IDet_row[idet])
 			data_arr[(idet_col-1)*lld+(idet_row-1)] = DATA[idet]
+			mask_arr[(idet_col-1)*lld+(idet_row-1)] = MASK[idet]
 
                 elif POLAR[idet] == 'B':
 			
@@ -82,12 +86,13 @@ def prepare_data(input_inmce, itile=0, mapping='BA'):
                         idet_col = int(IDet_col[idet])
                         idet_row = int(IDet_row[idet])
                         data_arr[(idet_col-1)*lld+(idet_row-1)+npixel] = DATA[idet]
+			mask_arr[(idet_col-1)*lld+(idet_row-1)+npixel] = MASK[idet]
                 else:
                         continue
 	#for itile in range(ntile):
 	#	da[itile] = np.asarray(data_arr[itile])
 
-	return data_arr
+	return data_arr,mask_arr
 
 def plot_a_map(data_array,triangles,x,y,mask_wire,itile,value_min,value_max,plot_title,plot_unit,out_path,maintitle=' ',ifshow=False, cmap='jet'):
 
@@ -117,9 +122,10 @@ def plot_a_map(data_array,triangles,x,y,mask_wire,itile,value_min,value_max,plot
 # maintitle = title of the plot, on the top
 def triange_mapping_single(input_inmce, itile, vmin,vmax,vari,unit,outpath, mask_wire = None, mapping='BA', maintitle=' ', cmap = 'jet'):
 	[x,y,triangles] = prepare_triangles(lld)
-	da = prepare_data(input_inmce, mapping=mapping)
-	if not mask_wire:
-		mask_wire = get_default_mask()
+	if mask_wire is None:
+		#mask_wire = get_default_mask()
+		mask_wire = np.zeros_like(input_inmce)
+	da, mask_wire = prepare_data(input_inmce, mask_wire, mapping=mapping)
         plot_a_map(da, 
 		triangles, x, y, 
 		mask_wire, itile, 

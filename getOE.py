@@ -29,25 +29,25 @@ import shutil
 # ================================== #
 class opts:
 	testbed = 'SK'
-	freq = 30 # GHz
+	freq = 40 # GHz
 	date = '20201016'
-	module = 'BA30N5S5'
+	module = 'BA40Mx1T3_mesa'
 	runn = '%s_%s_%s'%(date,testbed,module)
-	fn300 = 'LC_light_ba_FPU322mK_datamode1_source300k'
-	fn077 = 'LC_light_ba_FPU315mK_datamode1_source077k_highbias_2'
-	fitrange = {    'rnti_low': 3000.00,
-	                'rnti_hgh': 6000.00,
+	fn300 = 'LC_light_ba_FPU322mK_datamode1_source300k_lowbias_1'
+	fn077 = 'LC_light_ba_FPU320mK_datamode1_source077k_lowbias_2'
+	fitrange = {    'rnti_low': 1000.00,
+	                'rnti_hgh': 4000.00,
 	                'sc_low': None,
 	                'sc_hgh': None}
-	cols = [0,1]
+	cols = [8,9]
 	rows = range(33)
 	ifoutputinMCE = False 
 	doFigure = True
 	# plot ax[1] xy limits
 	pmin = 0.  # pW
-	pmax = 100. # pW
-	rmin = 50. # mOhm
-	rmax = 300.# mOhm
+	pmax = 200. # pW
+	rmin = 80. # mOhm
+	rmax = 500.# mOhm
 	# for finding psat
 	reasonableInorm = 30.0e-6 #A 
 
@@ -83,17 +83,18 @@ def main():
 	#===================================#
 	# Loading data
 	#===================================#
-	in_path  = '../cryo/%s/'%opts.date
-	out_path_main = '../output/%s/%s/'%(opts.date, opts.runn)
+	in_path  = '/home/data/cryo/%s/'%opts.date
+	out_path_main = '/home/data/output/%s/%s/'%(opts.date, opts.runn)
 
 	
 	out_path = out_path_main
+	print(out_path)
 	if not os.path.isdir(out_path):
 		os.makedirs(out_path)
 	shutil.copy2(os.path.realpath(__file__), out_path_main + (os.path.realpath(__file__).split("/")[-1]).replace(".py",".txt"))
 	datafn300 = in_path + opts.fn300 + '/' + opts.fn300
 	datafn077 = in_path + opts.fn077 + '/' + opts.fn077
-	
+		
 	biasfn300 = datafn300 + '.bias'
 	f300 = mce_data.MCEFile(datafn300)
 	dname300 = os.path.split(datafn300)[0]
@@ -141,7 +142,8 @@ def main():
 			dpdt = (psat077 - psat300)/(300.-77.)*1.0e12
 			print("dpdt %.3f pW/K"%dpdt)
 			# Outputs
-			if (rnti>0.25 or rnti<0.01) or (dpdt>0.12 or dpdt<0.001):
+			#if (rnti>1. or rnti<0.01) or (dpdt>0.12 or dpdt<0.00001):
+			if (rnti>1. or rnti<0.01) or (dpdt>0.12 ):
 				dpdt = float('nan')
 				rnti   = float('nan')
 			dpdt_array[col][row] = dpdt # in pW/K
