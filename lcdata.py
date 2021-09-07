@@ -290,17 +290,33 @@ def get_LC(bias, fb, calib, fitrange = None, row = None, col = None, out_path = 
         RR = calib["R_SH"]*(1.00/ceff[0]-1.00) #Ohms
         if RR<10e-3 or RR>1000e-3:
                 RR = float('nan')
+
+        # Al Fit
+        # fit range
+	try:
+       		bias_fit_al = np.array([bias[i] for i in xrange((len(bias))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
+       		fb_fit_al   = np.array([fb[i] for i in xrange((len(fb))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
+       		# fit with poly1
+       		ceff_al  = np.polyfit(bias_fit_al*calib["BIAS_CAL"][0],-1*flip*fb_fit_al*calib["FB_CAL"][0],1)
+       		# normal Al resistance = R - RnTi
+       		RR_al = calib["R_SH"]*(1.00/ceff_al[0]-1.00) #Ohms
+       		RR_al = RR_al - RR
+       		if RR_al<10e-3 or RR_al>1000e-3:
+       			RR_al = float('nan')
+	except:
+		RR_al = float('nan')
+	
 	# fit sc
 	if fitrange["sc_low"] is None:
-        	fitrange["sc_low"] = min(bias)
-		fitrange["sc_hgh"] = max(bias)
+        	fitrange["sc_low"] = 0 
+		fitrange["sc_hgh"] = 50
 	bias_sc  = np.array([bias[i] for i in xrange((len(bias))) if (bias[i]>fitrange["sc_low"] and bias[i]<fitrange["sc_hgh"])])
         fb_sc    = np.array([fb[i] for i in xrange((len(fb))) if (bias[i]>fitrange["sc_low"] and bias[i]<fitrange["sc_hgh"])])
         # fit sc with polfb1
         ceff_sc  = np.polyfit(bias_sc*calib["BIAS_CAL"][0],-1*flip*fb_sc*calib["FB_CAL"][0],1)
         ffunc_sc = np.poly1d(ceff_sc)
 
-	if DCflag == 'RN':
+	if DCflag == 'RN': # Don't have the option to use rnal here. Rnal is more likely to be impact by flux jump.
 		shift_h  = ffunc(0)
 	elif DCflag == 'SC':
 		shift_h  = ffunc_sc(0)
@@ -326,8 +342,8 @@ def get_LC(bias, fb, calib, fitrange = None, row = None, col = None, out_path = 
 		
                 fn = os.path.join(out_path,'single_iv_row%02d'%row + '_col%02d_yes.png'%col)
                 eps.possetting(fig, ffn = fn, ifleg = False, ifgrid = True, ifshow = False)
-        
-	return biascalib, fbcalib, RR, ceff_sc[0]
+
+	return biascalib, fbcalib, RR, ceff_sc[0], RR_al
 
 
 #ksc : superconducting slope from the lc func above, not required.
@@ -400,7 +416,7 @@ def get_PR(biascalib, fbcalib, calib, rnti, rnpsat, row = None, col = None, out_
 			fbcalib, float('nan'))
 	while 1:
 		maxInorm = np.nanmax(Inorm)
-		ind = np.where((pp>rnti*(0.5*maxInorm)**2)&(pp<rnti*(1.2*maxInorm)**2))[0]
+		ind = np.where((pp>rnti*(0.5*maxInorm)**2)&(pp<rnti*(1.5*maxInorm)**2))[0]
 		if not( len(ind) or (len(Inorm[~np.isnan(Inorm)]) == 0)):
 			Inorm[np.nanargmax(Inorm)]=float('nan')
 		elif maxInorm > reasonableInorm:
@@ -409,6 +425,8 @@ def get_PR(biascalib, fbcalib, calib, rnti, rnpsat, row = None, col = None, out_
 			break
 	if len(ind):
 		psat = np.interp(rnpsat, rr[ind][::-1], pp[ind][::-1])
+		if rnpsat < np.nanmin(rr[ind])  or rnpsat > np.nanmax(rr[ind]):
+			psat = float('nan')
 		if psat < 0 or psat > 1000e-12:
 			psat = float('nan')
 	else:
