@@ -293,30 +293,27 @@ def get_LC(bias, fb, calib, fitrange = None, row = None, col = None, out_path = 
 
         # Al Fit
         # fit range
-	try:
-       		bias_fit_al = np.array([bias[i] for i in xrange((len(bias))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
-       		fb_fit_al   = np.array([fb[i] for i in xrange((len(fb))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
-       		# fit with poly1
-       		ceff_al  = np.polyfit(bias_fit_al*calib["BIAS_CAL"][0],-1*flip*fb_fit_al*calib["FB_CAL"][0],1)
-       		# normal Al resistance = R - RnTi
-       		RR_al = calib["R_SH"]*(1.00/ceff_al[0]-1.00) #Ohms
-       		RR_al = RR_al - RR
-       		if RR_al<10e-3 or RR_al>1000e-3:
-       			RR_al = float('nan')
-	except:
-		RR_al = float('nan')
+        bias_fit_al = np.array([bias[i] for i in xrange((len(bias))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
+        fb_fit_al   = np.array([fb[i] for i in xrange((len(fb))) if (bias[i]>fitrange["rnal_low"] and bias[i]<fitrange["rnal_hgh"])])
+        # fit with poly1
+        ceff_al  = np.polyfit(bias_fit_al*calib["BIAS_CAL"][0],-1*flip*fb_fit_al*calib["FB_CAL"][0],1)
+        # normal Al resistance = R - RnTi
+        RR_al = calib["R_SH"]*(1.00/ceff_al[0]-1.00) #Ohms
+        RR_al = RR_al - RR
+        if RR_al<10e-3 or RR_al>1000e-3:
+                RR_al = float('nan')
 	
 	# fit sc
 	if fitrange["sc_low"] is None:
-        	fitrange["sc_low"] = 0 
-		fitrange["sc_hgh"] = 50
+        	fitrange["sc_low"] = min(bias)
+		fitrange["sc_hgh"] = max(bias)
 	bias_sc  = np.array([bias[i] for i in xrange((len(bias))) if (bias[i]>fitrange["sc_low"] and bias[i]<fitrange["sc_hgh"])])
         fb_sc    = np.array([fb[i] for i in xrange((len(fb))) if (bias[i]>fitrange["sc_low"] and bias[i]<fitrange["sc_hgh"])])
         # fit sc with polfb1
         ceff_sc  = np.polyfit(bias_sc*calib["BIAS_CAL"][0],-1*flip*fb_sc*calib["FB_CAL"][0],1)
         ffunc_sc = np.poly1d(ceff_sc)
 
-	if DCflag == 'RN': # Don't have the option to use rnal here. Rnal is more likely to be impact by flux jump.
+	if DCflag == 'RN':
 		shift_h  = ffunc(0)
 	elif DCflag == 'SC':
 		shift_h  = ffunc_sc(0)

@@ -13,7 +13,6 @@ import pylab as pl
 import mce_data
 
 from lcdata import get_LC as lc
-from lcdata import get_PR_Ti as pr
 
 from Gtemplists import gettemplists
 
@@ -26,16 +25,20 @@ class opts:
 	date = '20201205'
 	module = 'BA30N5S5'
 	runn = '%s_%s_%s'%(date,testbed,module)
+	filenamestr = 'LC_G_FPU_%dmK_datamode1_run1'
+	transition = 'Al' # 'Ti' or 'Al'
 	rnpsat = 0.07 # Ohm
 	iffitbeta = True 
-	fitrange = {	'rnti_low': 3000.00,
-			'rnti_hgh': 5000.00,
-			'sc_low': 0.00,
+	fitrange = {	'rnti_low': 100.00,
+			'rnti_hgh': 3000.00,
+			'rnal_low':  50000.00,
+			'rnal_hgh': 55000.00,
+			'sc_low': 100.00,
+			'sc_hgh': 3000.00}	
 			'sc_hgh': 30.00}	
-	#cols = range(12)
-	cols = [0, 1]
+	cols = range(16)
 	rows = range(33)
-
+	reasonableInorm = 25.0e-6
 
 # ================================== #
 
@@ -79,6 +82,13 @@ def main():
 	Gfn = '%s_G_%s_%s'%(opts.testbed,opts.module,opts.date)
 	lcdata = {}
 	prdata = {}
+	if opts.transition=='Al':
+		from lcdata import get_PR as pr
+	elif opts.transition=='Ti':
+		from lcdata import get_PR_Ti as pr
+	else:
+		print('Use Ti transition as default.')
+		from lcdata import get_PR_Ti as pr
 	colors = pl.cm.jet(np.linspace(0,1,len(templist)))
 	
 	in_path  = '../cryo/%s/'%(opts.date)
@@ -90,7 +100,7 @@ def main():
 		#===================================#
 		# loading data/making output dirs
 		#===================================#
-		filename = 'LC_G_FPU_'+str(temp)+'mK_datamode1_run1'
+		filename = filenamestr%temp
 		if not os.path.isdir(out_path_main):
                         os.makedirs(out_path_main)
 		out_path = out_path_main + filename + '/'
@@ -120,11 +130,9 @@ def main():
 		for col in opts.cols:
 			for row in opts.rows:
 				fitrange = opts.fitrange
-				# get_LC(bias, fb, calib, fitrange = None, row = None, col = None, out_path = None, flip = 1, DCflag='RN')
-				ibias, ites, rnti, ksc = lc(bias, y[row,col], calib, fitrange, row, col)
-				print(ksc)
-				# get_PR_Ti(biascalib, fbcalib, calib, rnti, rnpsat, ksc = None, row = None, col = None, out_path = None, flip = 1)
-				rr, pp, psat = pr(ibias, ites, calib, rnti, opts.rnpsat, ksc=ksc, row=row, col=col)
+						
+				ibias, ites, rnti, ksc, rnal = lc(bias, -y[row,col], calib, fitrange, row, col, flip=1)
+				rr, pp, psat = pr(ibias, ites, calib, rnti, opts.rnpsat, row=row, col=col, reasonableInorm=opts.reasonableInorm)
 				lcdata[str(temp)+'_r'+str(row)+'c'+str(col)] = [ibias, ites]
 				prdata[str(temp)+'_r'+str(row)+'c'+str(col)] = [rr, pp, rnti, psat, 1/(ites*rr)] 	
 	
@@ -140,6 +148,7 @@ def main():
 	rnpsathighlist = [0]*len(templist)
 	psatlist = [0]*len(templist)
 	rntilist = [0]*len(templist)
+	rnallist = [0]*len(templist)
 	GTdata = {}
 	DetInfos = {}
 	for col in opts.cols:
@@ -149,13 +158,21 @@ def main():
 			im, detcol,detrow,detpol = minfo.mce2det(col,row)
 			for itt in range(len(templist)):
 				psatlist[itt] = prdata[str(templist[itt])+'_r'+str(row)+'c'+str(col)][3]*1.00e12
-                		rntilist[itt] = prdata[str(templist[itt])+'_r'+str(row)+'c'+str(col)][2]*1.00e3
+				rntilist[itt] = prdata[str(templist[itt])+'_r'+str(row)+'c'+str(col)][2]*1.00e3
+				rnallist[itt] = prdata[str(templist[itt])+'_r'+str(row)+'c'+str(col)][5]*1.00e3
 				if rntilist[itt] < 20 or rntilist[itt]>1000:
 					rntilist[itt] = float('nan')
+				if rnallist[itt] < 20 or rnallist[itt]>1000:
+					rnallist[itt] = float('nan')
 			#rnti = np.nanmean(rntilist)
-			rntilist = np.array(rntilist)	
-			rnti = np.mean(rntilist[~np.isnan(rntilist)])
-			xdata = np.linspace(240, 510, 100)
+			rntilist = np.array(rntilist)
+			rnti = np.nanmean(rntilist)
+			rnallist = np.array(rnallist)	
+			rnal = np.nanmean(rnallist)
+			if opts.transition=='Al':
+				xdata = np.linspace(450, 1150, 100)
+			else:
+				xdata = np.linspace(240, 510, 100)
 
 			fig = pl.figure(figsize=(20,6.5), dpi=80)
 			pl.clf()
@@ -219,7 +236,7 @@ def main():
 			pl.xlabel('T [mK]', fontsize=15)
 			plt.tick_params(labelsize=14)
 			plt.grid()
-			if popt[0]>0 and popt[1]>0 and popt[1]<550:
+			if popt[0]>0 and popt[1]>0 and popt[1]<1500:
 				try:
 					pl.text(0.5,0.9,'Gc='+str(round(popt[0]*1e3,1))+' pW/K',transform=ax.transAxes, fontsize=14)
 					pl.text(0.5,0.85,'Tc='+str(round(popt[1]))+' mK',transform=ax.transAxes, fontsize=14)
