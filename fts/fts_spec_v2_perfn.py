@@ -31,7 +31,7 @@ kB = 1.38e-11 # match pW
 small = False # make small plots
 savefigdetcoord=1  
 date  = '20210511'
-runn = 'SK_N7B6'
+runn = 'SK_N7B6_perfn'
 cols = [8,9,0,1] # mce cols to run through. mce row is default as 0-32
 doEff = 1 # if you want to scale the y axis of the spectrum to optical efficiency
 indpdt = '/home/cheng/analysis/DATA/output/20210423/20210423_SK_BA30N6N7/20210423_SK_BA30N6N7_dpdt_rnti.pkl' # specify the dpdt data file to use if you set doEff=1
@@ -203,48 +203,51 @@ def main():
 		spsin = dexist[9]	
 		wlf_array = dexist[10]
 
-	for col in cols:
-	#for col in [8]:
-		for row in range(33):
-		#for row in [32]:
-			
-			if os.path.exists(indpdt):
-				d2 = pickle.load(open(indpdt,'r'))
-				dpdt = d2[0][col][row]
-			else:
-				print('NO DPDT data!')
-				exit
-		
-			#===================================================================
-			# get the interferogram
-			# wlf at center, each side has 'nlen_hlf_intf' data points (not counting wlf)
-			# 
-			# NOTE: the input wlfs form 'dataNwlf' are not necessary to be precise
-			#		the 'adjust_wlf(interf,guess_tolerance)' function will deal with it.
-			#===================================================================
-			
-			x = np.array(range(2*nlen_hlf_intf+1))	
-			xp = x*1/nSample*v_mirror # mm
-
-			im, detcol,detrow,detpol = minfo.mce2det(col,row)
-			detcol_array[col][row] = detcol
-			detrow_array[col][row] = detrow
-			detpol_array[col][row] = detpol
-			
-			for ifn,filename in enumerate(filelist):
+	if os.path.exists(indpdt):
+		d2 = pickle.load(open(indpdt,'r'))
+	
+	for ifn,filename in enumerate(filelist):
+	
+		f = mce_data.MCEFile(in_path+'%s/'%filename[0:8]+filename)
+		dname = os.path.split(in_path+filename)[0]
+		fb_all = f.Read(row_col=True,unfilter='DC').data
+	
+		for col in cols:
+			for row in range(33):
+				
 				if not ('r'+str(int(row))+'c'+str(int(col)) in chnlist[filename]):
 					continue
-
+	
+				if os.path.exists(indpdt):
+					dpdt = d2[0][col][row]
+				else:
+					print('NO DPDT data!')
+					exit
+			
+				#===================================================================
+				# get the interferogram
+				# wlf at center, each side has 'nlen_hlf_intf' data points (not counting wlf)
+				# 
+				# NOTE: the input wlfs form 'dataNwlf' are not necessary to be precise
+				#		the 'adjust_wlf(interf,guess_tolerance)' function will deal with it.
+				#===================================================================
+				
+				x = np.array(range(2*nlen_hlf_intf+1))	
+				xp = x*1/nSample*v_mirror # mm
+	
+				im, detcol,detrow,detpol = minfo.mce2det(col,row)
+				detcol_array[col][row] = detcol
+				detrow_array[col][row] = detrow
+				detpol_array[col][row] = detpol
+				
+	
 				fb_hs_list = []
 				nhs = np.zeros(2*nlen_hlf_intf+1)
 				Nhs = 0
 				fb_hs_final = np.array([0]*(2*nlen_hlf_intf+1))
-
-				f = mce_data.MCEFile(in_path+'%s/'%filename[0:8]+filename)
-				dname = os.path.split(in_path+filename)[0]
-				fb_all = f.Read(row_col=True,unfilter='DC').data
+	
 				fb = fb_all[row,col]
-
+	
 				wlfs = wlf[filename]
 				for iwlf,wlf_prim in enumerate(wlfs):
 					fb_hs = fb[wlf_prim-9000:wlf_prim+9000+1]
@@ -262,11 +265,11 @@ def main():
 					fb_hs_final =  fb_hs_final + fb_hs
 					fb_hs_list.append(fb_hs)
 					Nhs += 1
-
-
+	
+	
 				if not Nhs:
 					continue
-			
+				
 				# plot
 				if small:
 					pl.figure(figsize=(10,8), dpi=20)
@@ -276,7 +279,6 @@ def main():
 				for i in range(Nhs):
 					plt.plot(xp*1.0e3,fb_hs_list[i],color='grey',alpha=0.2)
 				fb_hs_final = fb_hs_final/Nhs
-				print Nhs
 				plt.plot(xp*1.0e3,fb_hs_final,color='blue')
 				plt.text(0.03,0.9,'mr'+str(int(row))+' mc'+str(int(col))+', dr'+str(int(detrow))+' dc'+str(int(detcol))+' pol'+detpol,fontsize=25,transform=ax.transAxes)
 				plt.xlabel('mm',fontsize=25)
@@ -317,7 +319,7 @@ def main():
 						ax.get_xticklabels() + ax.get_yticklabels()):
 					item.set_fontsize(20)
 				plt.text(0.03,0.9,'bc = '+str(round(bc,2))+'GHz, bw = '+str(round(bw/bc*100,1))+'%',fontsize=25,transform=ax.transAxes)
-	
+		
 				if not savefigdetcoord:
 					figname = 'spec_row'+str(int(row))+'_col'+str(int(col))+'_fn'+str(int(ifn))
 				else:
@@ -332,7 +334,7 @@ def main():
 				interfg['r%dc%df%d'%(row,col,ifn)] = fb_hs_final
 				spcos['r%dc%df%d'%(row,col,ifn)] = cs
 				spsin['r%dc%df%d'%(row,col,ifn)] = ss		
-
+	
 	pickle.dump((filelist, bw_array, bc_array, eff_array, detcol_array, detrow_array, detpol_array, interfg, spcos, spsin, wlf_array, v_mirror, nSample),open(fnpickle,'w'))
 	
 	
